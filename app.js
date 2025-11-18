@@ -14,7 +14,6 @@ app.use(express.json());
 
 //? serving static files
 app.use(express.static("./public"));
-("");
 
 app.use("/api/v1/users", authRouter);
 

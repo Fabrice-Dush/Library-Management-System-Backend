@@ -4,6 +4,7 @@ import { createToken } from "../utils/helpers.js";
 
 export const signup = async function (req, res, next) {
   try {
+    console.log("Signing up");
     //? create a user
     const user = await User.create(req.body);
 
@@ -28,19 +29,17 @@ export const signup = async function (req, res, next) {
 };
 
 export const login = async function (req, res, next) {
+  console.log("Login");
   try {
     console.log("Logging");
     console.log(req.body.email);
-    //? check if user email  and password is the correct
+    //? check if user email  and password is correct
     const user = await User.findOne({ email: req.body.email });
     console.log(user);
-
     if (!user || !(await user.verifyPassword(req.body.password, user.password)))
       throw new Error("Wrong email or password");
-
     //? create a new jwt
     const token = createToken(user);
-
     res.status(201).json({
       status: "success",
       message: "Logged in successfully!",
@@ -49,7 +48,6 @@ export const login = async function (req, res, next) {
     });
   } catch (err) {
     console.log(err);
-
     res.status(500).json({
       status: "fail",
       message: "Error Logging you in!",
