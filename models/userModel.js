@@ -51,6 +51,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    passwordChangedAt: { type: Date, default: Date.now },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -66,22 +67,24 @@ userSchema.virtual("fullName").get(function () {
 });
 
 //? document middleware
-userSchema.pre("save", async function (next) {
-  //? hashing password with salt of 12
-  this.password = await bcrypt.hash(this.password, 12);
+// userSchema.pre("save", async function (next) {
+//   //? hashing password with salt of 12
+//   this.password = await bcrypt.hash(this.password, 10);
 
-  //? deleting password confirmation field
-  this.passwordConfirm = undefined;
+//   //? deleting password confirmation field
+//   this.passwordConfirm = undefined;
 
-  next();
-});
+//   next();
+// });
 
 //? instance methods
 userSchema.methods.verifyPassword = async function (
   candidatePassword,
   userPassword
 ) {
+  console.log({ candidatePassword, userPassword });
   const isTrue = await bcrypt.compare(candidatePassword, userPassword);
+  console.log(await bcrypt.compare(candidatePassword, userPassword));
   console.log(isTrue);
   return isTrue;
 };

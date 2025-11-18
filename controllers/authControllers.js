@@ -1,10 +1,8 @@
 import User from "../models/userModel.js";
-import jwt from "jsonwebtoken";
 import { createToken } from "../utils/helpers.js";
 
 export const signup = async function (req, res, next) {
   try {
-    console.log("Signing up");
     //? create a user
     const user = await User.create(req.body);
 
@@ -22,22 +20,22 @@ export const signup = async function (req, res, next) {
 
     res.status(500).json({
       status: "fail",
-      message: "Error creating a user",
+      message: err.message,
       errors: { err },
     });
   }
 };
 
 export const login = async function (req, res, next) {
-  console.log("Login");
   try {
-    console.log("Logging");
-    console.log(req.body.email);
     //? check if user email  and password is correct
-    const user = await User.findOne({ email: req.body.email });
-    console.log(user);
-    if (!user || !(await user.verifyPassword(req.body.password, user.password)))
-      throw new Error("Wrong email or password");
+    const user = await User.findOne({
+      email: req.body.email,
+      password: req.body.password,
+    });
+
+    if (!user) throw new Error("Wrong email or password");
+
     //? create a new jwt
     const token = createToken(user);
     res.status(201).json({
@@ -47,11 +45,25 @@ export const login = async function (req, res, next) {
       data: { user },
     });
   } catch (err) {
-    console.log(err);
     res.status(500).json({
       status: "fail",
-      message: "Error Logging you in!",
-      errors: err,
+      message: err.message,
+      errors: { error: err },
     });
   }
+};
+
+export const forgotPassword = async function (req, res, next) {
+  try {
+  } catch (err) {}
+};
+
+export const resetPassword = async function (req, res, next) {
+  try {
+  } catch (err) {}
+};
+
+export const updateMyPassword = async function (req, res, next) {
+  try {
+  } catch (err) {}
 };
