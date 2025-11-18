@@ -1,0 +1,29 @@
+{
+  "name": "library-management-system-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fabrice-Dush/Library-Management-System-Frontend.git"
+  },
+  "keywords": [],
+  "author": "DUSHIMIMANA Fabrice",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Fabrice-Dush/Library-Management-System-Frontend/issues"
+  },
+  "homepage": "https://github.com/Fabrice-Dush/Library-Management-System-Frontend#readme",
+  "type": "module",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.20.0",
+    "validator": "^13.15.23"
+  }
+}
