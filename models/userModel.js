@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const userSchema = new mongoose.Schema(
   {
@@ -23,14 +24,12 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      trim: true,
-      lowercase: true,
+      minLength: [6, "A password must be at least 6 characters long"],
       required: [true, "Please provide your password"],
+      select: false,
     },
     passwordConfirm: {
       type: String,
-      trim: true,
-      lowercase: true,
       required: [true, "Please provide your password confirmation"],
       validate: {
         validator: function (val) {
@@ -39,19 +38,30 @@ const userSchema = new mongoose.Schema(
         message: "Password and password confirmation must be the same",
       },
     },
+    passwordResetToken: String,
+    passwordResetTokenExpiresIn: Date,
+    passwordChangedAt: Date,
+    photo: {
+      type: String,
+      default:
+        "https://e7.pngegg.com/pngimages/84/165/png-clipart-united-states-avatar-organization-information-user-avatar-service-computer-wallpaper-thumbnail.png",
+    },
     role: {
       type: String,
-      default: "user",
+      default: "student",
       enum: {
-        values: ["user", "admin"],
-        message: "role should either be user or admin",
+        values: ["student", "admin"],
+        message: "role should either be student or admin",
       },
     },
     isActive: {
       type: Boolean,
       default: true,
     },
-    passwordChangedAt: { type: Date, default: Date.now },
+    isPenalized: {
+      type: Boolean,
+      default: false,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -67,26 +77,50 @@ userSchema.virtual("fullName").get(function () {
 });
 
 //? document middleware
-// userSchema.pre("save", async function (next) {
-//   //? hashing password with salt of 12
-//   this.password = await bcrypt.hash(this.password, 10);
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password") && !this.isNew) return next();
 
-//   //? deleting password confirmation field
-//   this.passwordConfirm = undefined;
+  //? hashing password with salt of 12
+  this.password = await bcrypt.hash(this.password, 10);
 
-//   next();
-// });
+  //? deleting password confirmation field
+  this.passwordConfirm = undefined;
+
+  next();
+});
 
 //? instance methods
 userSchema.methods.verifyPassword = async function (
   candidatePassword,
   userPassword
 ) {
-  console.log({ candidatePassword, userPassword });
   const isTrue = await bcrypt.compare(candidatePassword, userPassword);
-  console.log(await bcrypt.compare(candidatePassword, userPassword));
-  console.log(isTrue);
   return isTrue;
+};
+
+userSchema.methods.checkPasswordChangedAfterTokenWasIssued = function (
+  tokenIssuedAt
+) {
+  if (!this.passwordChangedAt) return true;
+
+  const tokenIssued = tokenIssuedAt * 1000;
+
+  const passwordChangedAt = this.passwordChangedAt.getTime();
+
+  return tokenIssued > passwordChangedAt;
+};
+
+userSchema.methods.generatePasswordResetToken = function () {
+  const passwordResetToken = crypto.randomBytes(32).toString("hex");
+
+  this.passwordResetToken = crypto
+    .createHash("sha256")
+    .update(passwordResetToken)
+    .digest("hex");
+
+  this.passwordResetTokenExpiresIn = new Date(Date.now() + 10 * 60 * 1000);
+
+  return passwordResetToken;
 };
 
 //? creating a user model

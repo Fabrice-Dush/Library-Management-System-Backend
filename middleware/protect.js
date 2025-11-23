@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
+import AppError from "../utils/appError.js";
 
 export const protect = async function (req, res, next) {
   try {
@@ -12,35 +13,29 @@ export const protect = async function (req, res, next) {
       token = req.headers.authorization.split(" ").at(-1);
     }
 
-    if (!token) throw new Error("Login to get access");
+    if (!token) next(new AppError("Login to get access", 401));
 
     //? Check if the token is valid
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     //? Check if the user still exists
     const user = await User.findById(decoded.id);
-    if (!user) throw new Error("Account doesn't exist");
+    if (!user) next(new AppError("Account doesn't exist", 401));
 
     //? Check if the user hasn't changed their password after token was issued
-    const passwordChangedAt = Date.now(user.passwordChangedAt);
-    const tokenIssuedAt = decoded.iat * 1000;
-    console.log({ passwordChangedAt, tokenIssuedAt });
-
-    if (passwordChangedAt > tokenIssuedAt)
-      throw new Error(
-        "Password was changed after the token was issued.Login again!"
+    if (!user.checkPasswordChangedAfterTokenWasIssued(decoded.iat))
+      next(
+        new AppError(
+          "Password was changed after the token was issued.Login again!",
+          401
+        )
       );
 
     //? granting access to the protected route
     req.user = user;
     next();
   } catch (err) {
-    console.log(err);
-    res.status(500).json({
-      status: "fail",
-      message: err.message,
-      errors: { err },
-    });
+    next(new AppError(err));
   }
 };
 
@@ -48,13 +43,13 @@ export const restrictTo = (...roles) => {
   return async function (req, res, next) {
     try {
       if (!roles.includes(req.user.role))
-        throw new Error("You don't have permission to access this resource");
+        next(
+          new AppError("You don't have permission to access this resource", 403)
+        );
 
       next();
     } catch (err) {
-      res
-        .status(500)
-        .json({ status: "success", message: err.message, errors: { err } });
+      next(new AppError(err));
     }
   };
 };
